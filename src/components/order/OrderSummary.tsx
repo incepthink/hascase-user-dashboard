@@ -7,6 +7,8 @@ interface OrderSummaryProps {
   merchantId: number | null;
   selectedLoyaltyId: number | null;
   selectedRewardId: number | null;
+  selectedLoyaltyCode: string | null;
+  selectedRewardLabel: string | null;
   onSubmit: () => void;
   submitting: boolean;
 }
@@ -14,8 +16,8 @@ interface OrderSummaryProps {
 function SummaryRow({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-center justify-between py-2.5 border-b border-[#1e2a4a] last:border-0">
-      <span className="text-xs text-gray-400">{label}</span>
-      <span className="text-sm text-white font-medium">{value}</span>
+      <span className="text-md text-gray-400">{label}</span>
+      <span className="text-md text-white font-medium max-w-50 truncate" title={value}>{value}</span>
     </div>
   );
 }
@@ -25,16 +27,18 @@ export default function OrderSummary({
   merchantId,
   selectedLoyaltyId,
   selectedRewardId,
+  selectedLoyaltyCode,
+  selectedRewardLabel,
   onSubmit,
   submitting,
 }: OrderSummaryProps) {
   const isReady = userId !== null && merchantId !== null;
 
   return (
-    <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <ShoppingCart size={18} className="text-[#2979FF]" />
-        <h2 className="text-base font-semibold text-white">Order Summary</h2>
+    <div>
+      <div className="flex items-center gap-2 mt-8 mb-6">
+        <ShoppingCart size={24} className="text-[#2979FF]" />
+        <h2 className="text-2xl font-semibold text-white">Order Summary</h2>
       </div>
 
       <div className="mb-5">
@@ -48,11 +52,11 @@ export default function OrderSummary({
         /> */}
         <SummaryRow
           label="Loyalty Code"
-          value={selectedLoyaltyId !== null ? `#${selectedLoyaltyId}` : "None"}
+          value={selectedLoyaltyCode ?? (selectedLoyaltyId !== null ? `#${selectedLoyaltyId}` : "None")}
         />
         <SummaryRow
           label="Reward"
-          value={selectedRewardId !== null ? `#${selectedRewardId}` : "None"}
+          value={selectedRewardLabel ?? (selectedRewardId !== null ? `#${selectedRewardId}` : "None")}
         />
         {/* <SummaryRow label="Status" value="Pending" /> */}
       </div>

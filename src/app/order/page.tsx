@@ -54,12 +54,17 @@ export default function OrderPage() {
     }));
   }, [router]);
 
-  const handleLoyaltySelect = useCallback((id: number | null) => {
+  const [selectedLoyaltyCode, setSelectedLoyaltyCode] = useState<string | null>(null);
+  const [selectedRewardLabel, setSelectedRewardLabel] = useState<string | null>(null);
+
+  const handleLoyaltySelect = useCallback((id: number | null, code: string | null) => {
     setOrder((prev) => ({ ...prev, selected_loyalty_id: id }));
+    setSelectedLoyaltyCode(code);
   }, []);
 
-  const handleRewardSelect = useCallback((id: number | null) => {
+  const handleRewardSelect = useCallback((id: number | null, label: string | null) => {
     setOrder((prev) => ({ ...prev, selected_reward_id: id }));
+    setSelectedRewardLabel(label);
   }, []);
 
   const handleSubmit = async () => {
@@ -84,7 +89,7 @@ export default function OrderPage() {
   };
 
   return (
-    <div className="min-h-screen pt-20 px-4 pb-10">
+    <div className="min-h-screen pt-5 px-4 pb-4">
       <div className="max-w-2xl mx-auto space-y-4">
         <OrderHeader />
         <LoyaltyCart
@@ -103,6 +108,8 @@ export default function OrderPage() {
           merchantId={order.merchant_id}
           selectedLoyaltyId={order.selected_loyalty_id}
           selectedRewardId={order.selected_reward_id}
+          selectedLoyaltyCode={selectedLoyaltyCode}
+          selectedRewardLabel={selectedRewardLabel}
           onSubmit={handleSubmit}
           submitting={submitting}
         />

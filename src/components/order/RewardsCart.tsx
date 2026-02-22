@@ -26,10 +26,15 @@ interface RewardsCartProps {
   merchantId: number | null;
   userId: number | null;
   selectedRewardId: number | null;
-  onSelect: (id: number | null) => void;
+  onSelect: (id: number | null, label: string | null) => void;
 }
 
-export default function RewardsCart({ merchantId, userId, selectedRewardId, onSelect }: RewardsCartProps) {
+export default function RewardsCart({
+  merchantId,
+  userId,
+  selectedRewardId,
+  onSelect,
+}: RewardsCartProps) {
   const [rewards, setRewards] = useState<Reward[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -39,7 +44,9 @@ export default function RewardsCart({ merchantId, userId, selectedRewardId, onSe
     setLoading(true);
     setError(false);
     axiosInstance
-      .get(`/user/merchant/rewards`, { params: { merchant_id: merchantId, user_id: userId } })
+      .get(`/user/merchant/rewards`, {
+        params: { merchant_id: merchantId, user_id: userId },
+      })
       .then((res) => {
         setRewards(res.data.data ?? []);
       })
@@ -53,26 +60,31 @@ export default function RewardsCart({ merchantId, userId, selectedRewardId, onSe
 
   const handleSelect = (reward: Reward) => {
     if (!reward.can_claim) return;
-    onSelect(selectedRewardId === reward.id ? null : reward.id);
+    const next = selectedRewardId === reward.id ? null : reward.id;
+    onSelect(next, next !== null ? getRewardLabel(reward) : null);
+  };
+
+  const costLabel = (reward: Reward): string => {
+    if (reward.requiredTier !== null) {
+      return `0 (${reward.requiredTier.name} Tier Reward)`;
+    }
+    return `${reward.point_cost} Points`;
   };
 
   return (
-    <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <Gift size={18} className="text-[#2979FF]" />
-        <h2 className="text-base font-semibold text-white">Rewards</h2>
-        {selectedRewardId !== null && (
-          <span className="ml-auto flex items-center gap-1.5 text-xs text-[#2979FF]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2979FF]" />
-            Selected
-          </span>
-        )}
+    <div className="">
+      <div className="flex items-center gap-2 mt-8 mb-6">
+        <Gift size={24} className="text-[#2979FF]" />
+        <h2 className="text-2xl font-semibold text-white">Select Reward</h2>
       </div>
 
       {loading && (
         <div className="space-y-2 animate-pulse">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-11 rounded-lg bg-[#0d1231] border border-[#1e2a4a]" />
+            <div
+              key={i}
+              className="h-11 rounded-lg bg-[#0d1231] border border-[#1e2a4a]"
+            />
           ))}
         </div>
       )}
@@ -92,49 +104,77 @@ export default function RewardsCart({ merchantId, userId, selectedRewardId, onSe
 
       {!loading && !error && rewards.length === 0 && (
         <div className="flex items-center justify-center py-6 min-h-20">
-          <p className="text-sm text-gray-500">No rewards available right now.</p>
+          <p className="text-sm text-gray-500">
+            No rewards available right now.
+          </p>
         </div>
       )}
 
       {!loading && !error && rewards.length > 0 && (
-        <div className="space-y-2">
-          {rewards.map((reward) => {
-            const isSelected = selectedRewardId === reward.id;
-            const disabled = !reward.can_claim;
-            return (
-              <button
-                key={reward.id}
-                onClick={() => handleSelect(reward)}
-                disabled={disabled}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-left transition-colors duration-150 ${
-                  disabled
-                    ? "border-[#1e2a4a] bg-[#0d1231] text-gray-600 opacity-50 cursor-not-allowed"
-                    : isSelected
-                    ? "border-[#2979FF] bg-[#2979FF]/10 text-white cursor-pointer"
-                    : "border-[#1e2a4a] bg-[#0d1231] text-gray-300 hover:border-[#2979FF]/50 cursor-pointer"
-                }`}
-              >
-                <span className="font-semibold text-sm">{getRewardLabel(reward)}</span>
-                <div className="flex flex-col items-end gap-0.5">
-                  {reward.point_cost > 0 && (
-                    <span className={`text-xs ${isSelected ? "text-[#2979FF]" : disabled ? "text-gray-600" : "text-gray-500"}`}>
-                      {reward.point_cost} pts
-                    </span>
-                  )}
-                  {reward.requiredTier !== null && (
-                    <span className={`text-xs ${isSelected ? "text-[#2979FF]" : disabled ? "text-gray-600" : "text-gray-500"}`}>
-                      {reward.requiredTier.name} tier
-                    </span>
-                  )}
-                  {reward.point_cost === 0 && reward.requiredTier === null && (
-                    <span className={`text-xs ${isSelected ? "text-[#2979FF]" : disabled ? "text-gray-600" : "text-gray-500"}`}>
-                      0 pts
-                    </span>
-                  )}
-                </div>
-              </button>
-            );
-          })}
+        <div className="rounded-xl border border-[#1e2a4a] bg-[#0d1231] overflow-hidden">
+          <table className="w-full text-sm border-separate border-spacing-0">
+            <thead>
+              <tr className="border-b border-[#1e2a4a] text-gray-500 text-xs uppercase">
+                <th className="w-8 py-2 pl-4 border-b border-r border-[#1e2a4a]" />
+                <th className="text-center py-2.5 px-4 border-b border-r border-[#1e2a4a]">
+                  Reward
+                </th>
+                <th className="text-center py-2 px-4 border-b border-[#1e2a4a]">
+                  Cost
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {rewards.map((reward) => {
+                const isSelected = selectedRewardId === reward.id;
+                const disabled = !reward.can_claim;
+                return (
+                  <tr
+                    key={reward.id}
+                    onClick={() => handleSelect(reward)}
+                    className={`transition-colors duration-150 ${
+                      disabled
+                        ? "opacity-50 cursor-not-allowed"
+                        : "cursor-pointer hover:bg-white/5"
+                    } ${isSelected ? "bg-[#2979FF]/10" : ""}`}
+                  >
+                    <td className="py-3 pl-4 pr-3 border-b border-r border-[#1e2a4a] last-of-type:border-b-0">
+                      <input
+                        type="checkbox"
+                        checked={isSelected}
+                        disabled={disabled}
+                        onChange={() => handleSelect(reward)}
+                        onClick={(e) => e.stopPropagation()}
+                        className="accent-[#2979FF] w-4 h-4 cursor-pointer"
+                      />
+                    </td>
+                    <td
+                      className={`py-3 px-4 font-medium border-b border-r border-[#1e2a4a] ${
+                        isSelected
+                          ? "text-white"
+                          : disabled
+                            ? "text-gray-600"
+                            : "text-gray-300"
+                      }`}
+                    >
+                      {getRewardLabel(reward)}
+                    </td>
+                    <td
+                      className={`py-3 px-4 text-center border-b border-[#1e2a4a] ${
+                        isSelected
+                          ? "text-[#2979FF]"
+                          : disabled
+                            ? "text-gray-600"
+                            : "text-gray-500"
+                      }`}
+                    >
+                      {costLabel(reward)}
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
         </div>
       )}
     </div>

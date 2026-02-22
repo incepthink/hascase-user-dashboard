@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import axiosInstance from "@/utils/axios";
+import { getRewardLabel } from "@/utils/rewardLabel";
 
 interface Order {
   id: number;
@@ -16,6 +17,7 @@ interface Order {
   } | null;
   reward: {
     point_cost: number;
+    type: string;
     discountType: string;
     discountValue: string;
     productName: string;
@@ -30,14 +32,25 @@ export default function MyOrdersTab() {
 
   const fetchOrders = () => {
     const raw = Cookies.get("merchant_user");
-    if (!raw) { router.push("/login"); return; }
+    if (!raw) {
+      router.push("/login");
+      return;
+    }
 
     let user: { id?: number; merchant_id?: number } = {};
-    try { user = JSON.parse(raw); } catch { router.push("/login"); return; }
+    try {
+      user = JSON.parse(raw);
+    } catch {
+      router.push("/login");
+      return;
+    }
 
     const userId = user?.id;
     const merchantId = user?.merchant_id;
-    if (!userId || !merchantId) { router.push("/login"); return; }
+    if (!userId || !merchantId) {
+      router.push("/login");
+      return;
+    }
 
     setLoading(true);
     setError(null);
@@ -49,13 +62,18 @@ export default function MyOrdersTab() {
       .finally(() => setLoading(false));
   };
 
-  useEffect(() => { fetchOrders(); }, []);
+  useEffect(() => {
+    fetchOrders();
+  }, []);
 
   if (loading) {
     return (
       <div className="p-4 space-y-3 font-quantico animate-pulse">
         {[...Array(4)].map((_, i) => (
-          <div key={i} className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl h-16" />
+          <div
+            key={i}
+            className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl h-16"
+          />
         ))}
       </div>
     );
@@ -81,7 +99,9 @@ export default function MyOrdersTab() {
       <div className="p-4 flex flex-col items-center justify-center gap-2 text-center font-quantico min-h-50">
         <div className="text-4xl">🛒</div>
         <p className="text-white font-medium">No orders yet</p>
-        <p className="text-gray-400 text-sm">Your order history will appear here.</p>
+        <p className="text-gray-400 text-sm">
+          Your order history will appear here.
+        </p>
       </div>
     );
   }
@@ -96,41 +116,53 @@ export default function MyOrdersTab() {
 
   return (
     <div className="p-4 space-y-3 font-quantico">
-      <h2 className="text-xl font-semibold">My Orders</h2>
-
       {orders.map((order) => {
         const date = new Date(order.createdAt).toLocaleDateString("en-US", {
-          month: "short", day: "numeric", year: "numeric",
+          month: "short",
+          day: "numeric",
+          year: "numeric",
         });
-        const colorClass = statusColor[order.status?.toLowerCase()] ?? "text-gray-400";
-
-        const rewardLabel = order.reward
-          ? order.reward.discountType === "PERCENTAGE"
-            ? `${order.reward.productName} • ${parseFloat(order.reward.discountValue)}% off`
-            : `${order.reward.productName} • ₹${order.reward.discountValue} off`
-          : null;
+        const colorClass =
+          statusColor[order.status?.toLowerCase()] ?? "text-gray-400";
 
         return (
           <div
             key={order.id}
-            className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl px-4 py-3 flex items-center justify-between gap-3"
+            className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl px-4 py-3 flex flex-col gap-3"
           >
-            <div className="min-w-0">
-              <p className="text-white text-sm font-medium">#{order.id}</p>
-              <p className="text-gray-500 text-xs">{date}</p>
-              {rewardLabel && (
-                <p className="text-gray-400 text-xs truncate">{rewardLabel}</p>
+            <p className="text-white text-sm font-medium">#{order.id}</p>
+            <div className="flex flex-col gap-2">
+              {order.reward && (
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-400 text-sm">Reward</p>
+                  <span className="text-white text-sm">
+                    {getRewardLabel({
+                      type: order.reward.type,
+                      discountType: order.reward.discountType,
+                      discountValue: order.reward.discountValue,
+                      productName: order.reward.productName,
+                    })}
+                  </span>
+                </div>
               )}
-            </div>
-
-            <div className="flex flex-col items-end gap-1 shrink-0">
-              <p className={`text-xs capitalize font-medium ${colorClass}`}>{order.status}</p>
               {order.loyalty && (
-                <span className="text-[#2979FF] text-xs">+{order.loyalty.value} pts</span>
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-400 text-sm">Points Gain</p>
+                  <span className="text-green-400 text-sm">+{order.loyalty.value}</span>
+                </div>
               )}
               {order.reward && (
-                <span className="text-gray-500 text-xs">{order.reward.point_cost} pts spent</span>
+                <div className="flex justify-between items-center">
+                  <p className="text-gray-400 text-sm">Points Spent</p>
+                  <span className="text-red-400 text-sm">{order.reward.point_cost}</span>
+                </div>
               )}
+            </div>
+            <div className="flex justify-end gap-4 border-t border-[#2D3748] pt-2">
+              <p className={`text-xs capitalize font-medium ${colorClass}`}>
+                {order.status}
+              </p>
+              <p className="text-gray-500 text-xs">{date}</p>
             </div>
           </div>
         );

@@ -6,8 +6,6 @@ import Link from "next/link";
 import axiosInstance from "@/utils/axios";
 import Cookies from "js-cookie";
 import { notifyPromise, notifyResolve } from "@/utils/notify";
-import MerchantDropdown from "@/components/MerchantDropdown";
-
 const Login = () => {
   const router = useRouter();
 
@@ -16,15 +14,12 @@ const Login = () => {
     password: "",
   });
 
-  const [selectedMerchantId, setSelectedMerchantId] = useState<number | "">("");
-
   const handleInputChange = (e: ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
     setLoginForm((prev) => ({ ...prev, [name]: value }));
   };
 
-  const isFormValid =
-    loginForm.email && loginForm.password && selectedMerchantId !== "";
+  const isFormValid = loginForm.email && loginForm.password;
 
   const handleLogin = async () => {
     const notifyId = notifyPromise("Logging in, please hold on...", "info");
@@ -32,12 +27,15 @@ const Login = () => {
       const response = await axiosInstance.post("/auth/merchant/user/login", {
         email: loginForm.email,
         password: loginForm.password,
-        merchant_id: selectedMerchantId,
       });
 
-      Cookies.set("merchant_user", JSON.stringify({ ...response.data.data, merchant_id: selectedMerchantId }), {
-        expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
-      });
+      Cookies.set(
+        "merchant_user",
+        JSON.stringify(response.data.data),
+        {
+          expires: new Date(Date.now() + 4 * 60 * 60 * 1000),
+        },
+      );
 
       notifyResolve(notifyId, "Login successful! Redirecting...", "success");
 
@@ -92,11 +90,6 @@ const Login = () => {
             required
           />
         </div>
-
-        <MerchantDropdown
-          value={selectedMerchantId}
-          onChange={setSelectedMerchantId}
-        />
 
         <div className="text-sm text-blue-500 flex flex-col">
           <Link href="/signin" className="mt-2">

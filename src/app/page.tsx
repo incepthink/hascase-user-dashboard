@@ -1,12 +1,16 @@
 "use client";
 
-import { Suspense } from "react";
+import { Suspense, useEffect } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
 import { Tabs, Tab, Box, Button } from "@mui/material";
+import Cookies from "js-cookie";
 import SummaryTab from "@/components/tabs/SummaryTab";
 import MyOrdersTab from "@/components/tabs/MyOrdersTab";
 import ActivityTab from "@/components/tabs/ActivityTab";
 import ProfileTab from "@/components/tabs/ProfileTab";
+import MerchantDropdown from "@/components/MerchantDropdown";
+import axiosInstance from "@/utils/axios";
+import { useMerchantStore } from "@/context/merchantStore";
 
 const TABS = [
   { label: "Summary", value: "summary" },
@@ -33,6 +37,47 @@ function TabContent({ tab }: { tab: TabValue }) {
 function TabsLayout() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { merchantId, setMerchantId } = useMerchantStore();
+
+  useEffect(() => {
+    // Initialize merchantId from cookie on mount
+    const raw = Cookies.get("merchant_user");
+    if (!raw) {
+      router.push("/login");
+      return;
+    }
+    try {
+      const user = JSON.parse(raw);
+      if (!user?.id) {
+        router.push("/login");
+        return;
+      }
+      if (user.merchant_id) {
+        setMerchantId(user.merchant_id);
+      }
+    } catch {
+      router.push("/login");
+      return;
+    }
+
+    // Fetch merchant list
+    axiosInstance
+      .get("/platform/merchant")
+      .then((res) => {
+        const active = res.data.data.filter(
+          (m: { status: string }) => m.status === "active",
+        );
+        // If no merchant selected yet, default to the first active one
+        const raw2 = Cookies.get("merchant_user");
+        if (raw2) {
+          const user2 = JSON.parse(raw2);
+          if (!user2.merchant_id && active.length > 0) {
+            setMerchantId(active[0].id);
+          }
+        }
+      })
+      .catch(() => {});
+  }, []);
 
   const param = searchParams.get("tab") as TabValue | null;
   const activeTab: TabValue = TABS.some((t) => t.value === param)
@@ -43,8 +88,35 @@ function TabsLayout() {
     router.push(`?tab=${value}`);
   };
 
+  const handleLogout = () => {
+    Cookies.remove("owner_id");
+    Cookies.remove("owner_cap_id");
+    Cookies.remove("jwt");
+    Cookies.remove("api_key");
+
+    window.location.href = "/login";
+  };
+
   return (
     <Box sx={{ width: "100%", pt: 10 }}>
+      <div className="flex justify-between mb-8">
+        {/* Merchant selector */}
+        <Box>
+          <MerchantDropdown
+            value={merchantId ?? ""}
+            onChange={(id) => {
+              if (id !== "") setMerchantId(id);
+            }}
+          />
+        </Box>
+        <button
+          onClick={handleLogout}
+          className="bg-[#2563EB] px-4 py-2 rounded-md"
+        >
+          LOGOUT
+        </button>
+      </div>
+
       <Tabs
         value={activeTab}
         onChange={handleChange}
@@ -73,8 +145,8 @@ function TabsLayout() {
         ))}
       </Tabs>
 
-      <Box sx={{ pt: 2 }}>
-        <TabContent tab={activeTab} />
+      <Box sx={{ pt: 2, minHeight: "400px" }}>
+        <TabContent key={merchantId ?? "none"} tab={activeTab} />
       </Box>
 
       <Box sx={{ pt: 4, pb: 4 }}>
@@ -93,7 +165,7 @@ function TabsLayout() {
             textTransform: "none",
           }}
         >
-          Create Order
+          Checkout
         </Button>
       </Box>
     </Box>

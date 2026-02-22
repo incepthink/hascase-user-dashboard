@@ -14,15 +14,6 @@ const Navbar = () => {
     }
   }, []);
 
-  const handleLogout = () => {
-    Cookies.remove("owner_id");
-    Cookies.remove("owner_cap_id");
-    Cookies.remove("jwt");
-    Cookies.remove("api_key");
-
-    window.location.href = "/login";
-  };
-
   return (
     <div
       style={{ zIndex: "999" }}
@@ -56,12 +47,6 @@ const Navbar = () => {
             Connect Wallet
           </button>
         )} */}
-        <button
-          onClick={handleLogout}
-          className="bg-[#2563EB] px-4 py-2 rounded-md"
-        >
-          LOGOUT
-        </button>
       </div>
     </div>
   );

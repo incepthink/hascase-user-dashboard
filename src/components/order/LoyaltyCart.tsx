@@ -70,7 +70,7 @@ function isCodeAvailableNow(
 interface LoyaltyCartProps {
   merchantId: number | null;
   selectedLoyaltyId: number | null;
-  onSelect: (id: number | null) => void;
+  onSelect: (id: number | null, code: string | null) => void;
 }
 
 export default function LoyaltyCart({
@@ -103,21 +103,16 @@ export default function LoyaltyCart({
     fetchCodes();
   }, [merchantId]);
 
-  const handleSelect = (id: number) => {
-    onSelect(selectedLoyaltyId === id ? null : id);
+  const handleSelect = (code: LoyaltyCode) => {
+    const next = selectedLoyaltyId === code.id ? null : code.id;
+    onSelect(next, next !== null ? code.code : null);
   };
 
   return (
-    <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
-      <div className="flex items-center gap-2 mb-4">
-        <Tag size={18} className="text-[#2979FF]" />
-        <h2 className="text-base font-semibold text-white">Loyalty Code</h2>
-        {selectedLoyaltyId !== null && (
-          <span className="ml-auto flex items-center gap-1.5 text-xs text-[#2979FF]">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#2979FF]" />
-            Selected
-          </span>
-        )}
+    <div className="">
+      <div className="flex items-center gap-4 mt-6 mb-6">
+        <Tag size={24} className="text-[#2979FF]" />
+        <h2 className="text-2xl font-semibold text-white">Apply Code</h2>
       </div>
 
       {loading && (
@@ -153,26 +148,37 @@ export default function LoyaltyCart({
       )}
 
       {!loading && !error && codes.length > 0 && (
-        <div className="space-y-2">
+        <div className="grid grid-cols-4 gap-3">
           {codes.map((code) => {
             const isSelected = selectedLoyaltyId === code.id;
+            const len = code.code.length;
+            const colSpan =
+              len <= 5
+                ? "col-span-1"
+                : len <= 9
+                  ? "col-span-2"
+                  : len <= 14
+                    ? "col-span-3"
+                    : "col-span-4";
             return (
               <button
                 key={code.id}
-                onClick={() => handleSelect(code.id)}
-                className={`w-full flex items-center justify-between px-4 py-2.5 rounded-lg border text-left transition-colors duration-150 cursor-pointer ${
+                onClick={() => handleSelect(code)}
+                className={`${colSpan} flex flex-col items-start justify-center gap-1.5 px-3 py-4 rounded-xl border text-left transition-colors duration-150 cursor-pointer min-h-20 ${
                   isSelected
-                    ? "border-[#2979FF] bg-[#2979FF]/10 text-white"
-                    : "border-[#1e2a4a] bg-[#0d1231] text-gray-300 hover:border-[#2979FF]/50"
+                    ? "border-blue-400 bg-blue-600/30 text-white"
+                    : "border-blue-800/50 bg-blue-900/40 text-gray-300 hover:border-blue-500 hover:bg-blue-800/40"
                 }`}
               >
-                <span className="font-mono font-semibold text-sm tracking-wide">
+                <span className="font-mono font-semibold text-lg tracking-wide leading-tight break-all">
                   {code.code}
                 </span>
                 <span
-                  className={`text-xs ${isSelected ? "text-[#2979FF]" : "text-gray-500"}`}
+                  className={`text-md ${isSelected ? "text-blue-300" : "text-blue-400/70"}`}
                 >
-                  {code.value} {code.type === "points" ? "pts" : code.type}
+                  {code.type === "fixed" || code.type === "FIXED"
+                    ? `${code.value} Points`
+                    : "Variable"}
                 </span>
               </button>
             );

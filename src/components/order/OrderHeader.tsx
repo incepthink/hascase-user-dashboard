@@ -15,7 +15,7 @@ export default function OrderHeader() {
       >
         <ArrowLeft size={20} />
       </button>
-      <h1 className="text-2xl font-bold text-white">Create Order</h1>
+      <h1 className="text-2xl font-bold text-white">Checkout</h1>
     </div>
   );
 }

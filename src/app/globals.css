@@ -44,3 +44,33 @@ input, textarea, select {
   background: #1d5bbf;
   box-shadow: 0 0 0 8px rgba(41, 121, 255, 0.16);
 }
+
+@keyframes gradient-flow {
+  from { transform: translateX(0); }
+  to   { transform: translateX(-50%); }
+}
+
+.progress-gradient {
+  position: relative;
+  overflow: hidden;
+}
+
+.progress-gradient::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 200%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    #2979FF 0%,
+    #00C6FF 16.67%,
+    #a78bfa 33.33%,
+    #2979FF 50%,
+    #00C6FF 66.67%,
+    #a78bfa 83.33%,
+    #2979FF 100%
+  );
+  animation: gradient-flow 2s linear infinite;
+}

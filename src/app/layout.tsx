@@ -28,7 +28,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${inter.variable} ${quantico.variable}`}>
-        <Navbar />
+        {/* <Navbar /> */}
         {children}
         <ToastContainer />
       </body>
