@@ -22,11 +22,15 @@ interface LoyaltyCode {
   availabilityRule: AvailabilityRule | null;
 }
 
-function isCodeAvailableNow(availabilityRule: AvailabilityRule | null): boolean {
+function isCodeAvailableNow(
+  availabilityRule: AvailabilityRule | null,
+): boolean {
   if (!availabilityRule) return true;
 
   const now = new Date();
-  const tzNow = new Date(now.toLocaleString("en-US", { timeZone: availabilityRule.timezone }));
+  const tzNow = new Date(
+    now.toLocaleString("en-US", { timeZone: availabilityRule.timezone }),
+  );
 
   if (availabilityRule.start_date) {
     if (tzNow < new Date(availabilityRule.start_date)) return false;
@@ -38,11 +42,24 @@ function isCodeAvailableNow(availabilityRule: AvailabilityRule | null): boolean 
   }
 
   const currentTime = tzNow.toTimeString().slice(0, 5);
-  if (availabilityRule.start_time && currentTime < availabilityRule.start_time) return false;
-  if (availabilityRule.end_time && currentTime > availabilityRule.end_time) return false;
+  if (availabilityRule.start_time && currentTime < availabilityRule.start_time)
+    return false;
+  if (availabilityRule.end_time && currentTime > availabilityRule.end_time)
+    return false;
 
-  if (availabilityRule.available_days && availabilityRule.available_days.length > 0) {
-    const dayNames = ["sunday", "monday", "tuesday", "wednesday", "thursday", "friday", "saturday"];
+  if (
+    availabilityRule.available_days &&
+    availabilityRule.available_days.length > 0
+  ) {
+    const dayNames = [
+      "sunday",
+      "monday",
+      "tuesday",
+      "wednesday",
+      "thursday",
+      "friday",
+      "saturday",
+    ];
     const todayName = dayNames[tzNow.getDay()];
     if (!availabilityRule.available_days.includes(todayName)) return false;
   }
@@ -56,7 +73,11 @@ interface LoyaltyCartProps {
   onSelect: (id: number | null) => void;
 }
 
-export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }: LoyaltyCartProps) {
+export default function LoyaltyCart({
+  merchantId,
+  selectedLoyaltyId,
+  onSelect,
+}: LoyaltyCartProps) {
   const [codes, setCodes] = useState<LoyaltyCode[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(false);
@@ -70,7 +91,7 @@ export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }:
       .then((res) => {
         const all: LoyaltyCode[] = res.data.loyalties ?? [];
         const available = all.filter(
-          (l) => l.is_active && isCodeAvailableNow(l.availabilityRule ?? null)
+          (l) => l.is_active && isCodeAvailableNow(l.availabilityRule ?? null),
         );
         setCodes(available);
       })
@@ -90,7 +111,7 @@ export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }:
     <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
       <div className="flex items-center gap-2 mb-4">
         <Tag size={18} className="text-[#2979FF]" />
-        <h2 className="text-base font-semibold text-white">Loyalty Program</h2>
+        <h2 className="text-base font-semibold text-white">Loyalty Code</h2>
         {selectedLoyaltyId !== null && (
           <span className="ml-auto flex items-center gap-1.5 text-xs text-[#2979FF]">
             <span className="w-1.5 h-1.5 rounded-full bg-[#2979FF]" />
@@ -102,7 +123,10 @@ export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }:
       {loading && (
         <div className="space-y-2 animate-pulse">
           {[0, 1, 2].map((i) => (
-            <div key={i} className="h-11 rounded-lg bg-[#0d1231] border border-[#1e2a4a]" />
+            <div
+              key={i}
+              className="h-11 rounded-lg bg-[#0d1231] border border-[#1e2a4a]"
+            />
           ))}
         </div>
       )}
@@ -122,7 +146,9 @@ export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }:
 
       {!loading && !error && codes.length === 0 && (
         <div className="flex items-center justify-center py-6 min-h-[80px]">
-          <p className="text-sm text-gray-500">No loyalty codes available right now.</p>
+          <p className="text-sm text-gray-500">
+            No loyalty codes available right now.
+          </p>
         </div>
       )}
 
@@ -143,7 +169,9 @@ export default function LoyaltyCart({ merchantId, selectedLoyaltyId, onSelect }:
                 <span className="font-mono font-semibold text-sm tracking-wide">
                   {code.code}
                 </span>
-                <span className={`text-xs ${isSelected ? "text-[#2979FF]" : "text-gray-500"}`}>
+                <span
+                  className={`text-xs ${isSelected ? "text-[#2979FF]" : "text-gray-500"}`}
+                >
                   {code.value} {code.type === "points" ? "pts" : code.type}
                 </span>
               </button>

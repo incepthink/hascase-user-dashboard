@@ -38,17 +38,23 @@ export default function OrderSummary({
       </div>
 
       <div className="mb-5">
-        <SummaryRow label="User ID" value={userId !== null ? String(userId) : "—"} />
-        <SummaryRow label="Merchant ID" value={merchantId !== null ? String(merchantId) : "—"} />
+        {/* <SummaryRow
+          label="User ID"
+          value={userId !== null ? String(userId) : "—"}
+        />
         <SummaryRow
-          label="Loyalty Program"
+          label="Merchant ID"
+          value={merchantId !== null ? String(merchantId) : "—"}
+        /> */}
+        <SummaryRow
+          label="Loyalty Code"
           value={selectedLoyaltyId !== null ? `#${selectedLoyaltyId}` : "None"}
         />
         <SummaryRow
           label="Reward"
           value={selectedRewardId !== null ? `#${selectedRewardId}` : "None"}
         />
-        <SummaryRow label="Status" value="Pending" />
+        {/* <SummaryRow label="Status" value="Pending" /> */}
       </div>
 
       <button

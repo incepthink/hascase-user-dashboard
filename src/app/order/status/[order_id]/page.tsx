@@ -212,7 +212,7 @@ export default function OrderStatusPage() {
               />
               <DetailRow
                 icon={<Tag size={14} />}
-                label="Loyalty Program"
+                label="Loyalty Code"
                 value={
                   order.selected_loyalty_id != null ? (
                     `#${order.selected_loyalty_id}`
