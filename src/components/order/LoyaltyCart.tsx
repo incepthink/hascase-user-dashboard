@@ -28,9 +28,14 @@ function isCodeAvailableNow(
   if (!availabilityRule) return true;
 
   const now = new Date();
-  const tzNow = new Date(
-    now.toLocaleString("en-US", { timeZone: availabilityRule.timezone }),
-  );
+  let tzNow: Date;
+  try {
+    tzNow = new Date(
+      now.toLocaleString("en-US", { timeZone: availabilityRule.timezone }),
+    );
+  } catch {
+    tzNow = now; // fallback if timezone string is not a valid IANA name
+  }
 
   if (availabilityRule.start_date) {
     if (tzNow < new Date(availabilityRule.start_date)) return false;
