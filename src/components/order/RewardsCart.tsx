@@ -22,11 +22,17 @@ interface Reward {
   can_claim: boolean;
 }
 
+export interface RewardDiscount {
+  type: string;
+  discountType: string | null;
+  discountValue: string | null;
+}
+
 interface RewardsCartProps {
   merchantId: number | null;
   userId: number | null;
   selectedRewardId: number | null;
-  onSelect: (id: number | null, label: string | null) => void;
+  onSelect: (id: number | null, label: string | null, discount: RewardDiscount | null) => void;
 }
 
 export default function RewardsCart({
@@ -61,7 +67,11 @@ export default function RewardsCart({
   const handleSelect = (reward: Reward) => {
     if (!reward.can_claim) return;
     const next = selectedRewardId === reward.id ? null : reward.id;
-    onSelect(next, next !== null ? getRewardLabel(reward) : null);
+    onSelect(
+      next,
+      next !== null ? getRewardLabel(reward) : null,
+      next !== null ? { type: reward.type, discountType: reward.discountType, discountValue: reward.discountValue } : null
+    );
   };
 
   const costLabel = (reward: Reward): string => {

@@ -16,6 +16,56 @@ import {
   AlertCircle,
 } from "lucide-react";
 import axiosInstance from "@/utils/axios";
+import { getRewardLabel } from "@/utils/rewardLabel";
+
+interface Loyalty {
+  id: number;
+  owner_id: number | null;
+  merchant_id: number;
+  code: string;
+  value: number;
+  type: string;
+  availability_rule_id: number | null;
+  reset_rule_id: number | null;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+interface Reward {
+  id: number;
+  owner_id: number | null;
+  merchant_id: number;
+  point_cost: number;
+  type: string;
+  discountType: string;
+  discountValue: string;
+  productName: string | null;
+  requiredTierId: number | null;
+  createdAt: string;
+  updatedAt: string;
+}
+
+interface OrderUser {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  password: string;
+}
+
+interface PaymentMethod {
+  id: number;
+  user_id: number;
+  type: string;
+  status: string;
+  card_number: string | null;
+  card_type: string | null;
+  network: string | null;
+  expiry: string | null;
+  upi_id: string | null;
+  linked_bank: string | null;
+}
 
 interface Order {
   id: number;
@@ -23,10 +73,18 @@ interface Order {
   merchant_id: number;
   selected_loyalty_id: number | null;
   selected_reward_id: number | null;
+  bill_amount: string;
+  payment_method_id: number | null;
   status: string;
-  created_at?: string;
-  updated_at?: string;
-  [key: string]: unknown;
+  createdAt: string;
+  updatedAt: string;
+  loyalty: Loyalty | null;
+  reward: Reward | null;
+  user: OrderUser;
+  merchant: {
+    name: string;
+  };
+  payment_method: PaymentMethod | null;
 }
 
 function StatusBadge({ status }: { status: string }) {
@@ -34,7 +92,7 @@ function StatusBadge({ status }: { status: string }) {
 
   if (s === "completed" || s === "success") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/15 text-green-400 text-sm font-medium">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/15 text-green-400 text-sm font-medium capitalize">
         <CheckCircle2 size={14} />
         {status}
       </span>
@@ -42,7 +100,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (s === "pending") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400 text-sm font-medium">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400 text-sm font-medium capitalize">
         <Clock size={14} />
         {status}
       </span>
@@ -50,14 +108,14 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (s === "failed" || s === "cancelled" || s === "canceled") {
     return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 text-red-400 text-sm font-medium">
+      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 text-red-400 text-sm font-medium capitalize">
         <XCircle size={14} />
         {status}
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-[#2979FF] text-sm font-medium">
+    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-[#2979FF] text-sm font-medium capitalize">
       <AlertCircle size={14} />
       {status}
     </span>
@@ -114,7 +172,7 @@ export default function OrderStatusPage() {
       });
   }, [order_id]);
 
-  // Poll status every second
+  // Poll status every second, only while status is pending
   useEffect(() => {
     if (!order_id) return;
 
@@ -125,6 +183,10 @@ export default function OrderStatusPage() {
           const pollData = res.data?.data ?? res.data;
           const newStatus: string = pollData?.status ?? pollData;
           setStatus(newStatus);
+
+          if (newStatus?.toLowerCase() !== "pending") {
+            if (pollRef.current) clearInterval(pollRef.current);
+          }
         })
         .catch(() => {
           // Silently ignore poll errors
@@ -140,19 +202,19 @@ export default function OrderStatusPage() {
 
   return (
     <div className="min-h-screen pt-24 px-4 pb-10">
-      <div className="max-w-2xl mx-auto space-y-4">
+      <div className="max-w-2xl mx-auto space-y-6">
         {/* Header with home button */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-end justify-between">
           <button
-            onClick={() => router.push("/")}
-            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200 text-sm cursor-pointer"
+            onClick={() => router.push("/?tab=my-orders")}
+            className="flex items-center gap-2 text-gray-400 hover:text-white transition-colors duration-200 text-md cursor-pointer"
           >
             <Home size={16} />
             <span>Home</span>
           </button>
-          <h1 className="text-xl font-bold text-white flex items-center gap-2">
+          <h1 className="text-4xl font-bold text-white flex items-center gap-2">
             {/* <ShoppingCart size={20} className="text-[#2979FF]" /> */}
-            Order Status
+            Order Details
           </h1>
           <div className="w-16" /> {/* spacer to center heading */}
         </div>
@@ -174,48 +236,47 @@ export default function OrderStatusPage() {
         {/* Order details */}
         {!loading && order && (
           <>
-            {/* Status card */}
-            <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5 mt-5">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-400">Current Status</span>
+            {/* Full order details card */}
+            <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
+              <div className="flex justify-between items-center">
+                <div className="flex items-center gap-2 mb-4">
+                  {/* <ShoppingCart size={18} className="text-[#2979FF]" /> */}
+                  <h2 className="text-xl font-semibold text-white">
+                    #{order.id}
+                  </h2>
+                </div>
+
                 {displayStatus ? (
                   <StatusBadge status={displayStatus} />
                 ) : (
                   <Loader2 size={16} className="animate-spin text-[#2979FF]" />
                 )}
               </div>
-            </div>
-
-            {/* Full order details card */}
-            <div className="bg-[#0A0E2A] border border-[#1e2a4a] rounded-xl p-5">
-              <div className="flex items-center gap-2 mb-4">
-                <ShoppingCart size={18} className="text-[#2979FF]" />
-                <h2 className="text-base font-semibold text-white">
-                  Order Details
-                </h2>
-              </div>
-
-              <DetailRow
-                icon={<Tag size={14} />}
-                label="Order ID"
-                value={`#${order.id}`}
-              />
               <DetailRow
                 icon={<User size={14} />}
-                label="User ID"
-                value={order.user_id}
+                label="Email"
+                value={order.user.email}
               />
               <DetailRow
                 icon={<Store size={14} />}
-                label="Merchant ID"
-                value={order.merchant_id}
+                label="Merchant"
+                value={order.merchant.name}
+              />
+              <DetailRow
+                icon={<Store size={14} />}
+                label="Bill Amount"
+                value={
+                  order.bill_amount
+                    ? `₹${parseFloat(order.bill_amount).toFixed(2)}`
+                    : "—"
+                }
               />
               <DetailRow
                 icon={<Tag size={14} />}
                 label="Loyalty Code"
                 value={
-                  order.selected_loyalty_id != null ? (
-                    `#${order.selected_loyalty_id}`
+                  order.loyalty ? (
+                    order.loyalty.code
                   ) : (
                     <span className="text-gray-500">None</span>
                   )
@@ -225,25 +286,33 @@ export default function OrderStatusPage() {
                 icon={<Gift size={14} />}
                 label="Reward"
                 value={
-                  order.selected_reward_id != null ? (
-                    `#${order.selected_reward_id}`
+                  order.reward ? (
+                    getRewardLabel(order.reward)
                   ) : (
                     <span className="text-gray-500">None</span>
                   )
                 }
               />
-              {order.created_at && (
+              <DetailRow
+                icon={<User size={14} />}
+                label="Payment Method"
+                value={
+                  order.payment_method ? (
+                    order.payment_method.card_number ? (
+                      `${order.payment_method.network?.toUpperCase() ?? order.payment_method.type.toUpperCase()} ${order.payment_method.card_type?.toUpperCase() ?? ""} ••••${order.payment_method.card_number.slice(-4)}`.trim()
+                    ) : (
+                      `${order.payment_method.network?.toUpperCase() ?? order.payment_method.type.toUpperCase()} ${order.payment_method.upi_id ?? ""}`.trim()
+                    )
+                  ) : (
+                    <span className="text-gray-500">None</span>
+                  )
+                }
+              />
+              {order.createdAt && (
                 <DetailRow
                   icon={<Clock size={14} />}
-                  label="Created At"
-                  value={new Date(order.created_at).toLocaleString()}
-                />
-              )}
-              {order.updated_at && (
-                <DetailRow
-                  icon={<Clock size={14} />}
-                  label="Last Updated"
-                  value={new Date(order.updated_at).toLocaleString()}
+                  label="Time"
+                  value={new Date(order.createdAt).toLocaleString()}
                 />
               )}
             </div>

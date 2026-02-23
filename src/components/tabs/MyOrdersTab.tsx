@@ -110,7 +110,7 @@ export default function MyOrdersTab() {
     accepted: "text-green-400",
     completed: "text-green-400",
     pending: "text-yellow-400",
-    cancelled: "text-red-400",
+    rejected: "text-red-400",
     processing: "text-blue-400",
   };
 
@@ -128,7 +128,8 @@ export default function MyOrdersTab() {
         return (
           <div
             key={order.id}
-            className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl px-4 py-3 flex flex-col gap-3"
+            onClick={() => router.push(`/order/status/${order.id}`)}
+            className="bg-[#0A0E2A] border border-[#2D3748] rounded-xl px-4 py-3 flex flex-col gap-3 cursor-pointer"
           >
             <p className="text-white text-sm font-medium">#{order.id}</p>
             <div className="flex flex-col gap-2">
@@ -148,13 +149,17 @@ export default function MyOrdersTab() {
               {order.loyalty && (
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">Points Gain</p>
-                  <span className="text-green-400 text-sm">+{order.loyalty.value}</span>
+                  <span className="text-green-400 text-sm">
+                    +{order.loyalty.value}
+                  </span>
                 </div>
               )}
               {order.reward && (
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">Points Spent</p>
-                  <span className="text-red-400 text-sm">{order.reward.point_cost}</span>
+                  <span className="text-red-400 text-sm">
+                    {order.reward.point_cost}
+                  </span>
                 </div>
               )}
             </div>

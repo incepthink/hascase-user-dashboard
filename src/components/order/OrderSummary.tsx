@@ -5,10 +5,13 @@ import { ShoppingCart, Loader2 } from "lucide-react";
 interface OrderSummaryProps {
   userId: number | null;
   merchantId: number | null;
+  billAmount: number | null;
   selectedLoyaltyId: number | null;
   selectedRewardId: number | null;
   selectedLoyaltyCode: string | null;
   selectedRewardLabel: string | null;
+  paymentType: "card" | "upi" | null;
+  discountedBillAmount: number | null;
   onSubmit: () => void;
   submitting: boolean;
 }
@@ -25,14 +28,17 @@ function SummaryRow({ label, value }: { label: string; value: string }) {
 export default function OrderSummary({
   userId,
   merchantId,
+  billAmount,
   selectedLoyaltyId,
   selectedRewardId,
   selectedLoyaltyCode,
   selectedRewardLabel,
+  paymentType,
+  discountedBillAmount,
   onSubmit,
   submitting,
 }: OrderSummaryProps) {
-  const isReady = userId !== null && merchantId !== null;
+  const isReady = userId !== null && merchantId !== null && billAmount !== null;
 
   return (
     <div>
@@ -42,14 +48,17 @@ export default function OrderSummary({
       </div>
 
       <div className="mb-5">
-        {/* <SummaryRow
-          label="User ID"
-          value={userId !== null ? String(userId) : "—"}
-        />
-        <SummaryRow
-          label="Merchant ID"
-          value={merchantId !== null ? String(merchantId) : "—"}
-        /> */}
+        <div className="flex items-center justify-between py-2.5 border-b border-[#1e2a4a]">
+          <span className="text-md text-gray-400">Bill Amount</span>
+          <span className="flex items-center gap-2 text-md font-medium">
+            {discountedBillAmount !== null && billAmount !== null && (
+              <span className="line-through text-gray-500">₹{billAmount.toFixed(2)}</span>
+            )}
+            <span className="text-white">
+              {billAmount !== null ? `₹${(discountedBillAmount ?? billAmount).toFixed(2)}` : "—"}
+            </span>
+          </span>
+        </div>
         <SummaryRow
           label="Loyalty Code"
           value={selectedLoyaltyCode ?? (selectedLoyaltyId !== null ? `#${selectedLoyaltyId}` : "None")}
@@ -58,7 +67,10 @@ export default function OrderSummary({
           label="Reward"
           value={selectedRewardLabel ?? (selectedRewardId !== null ? `#${selectedRewardId}` : "None")}
         />
-        {/* <SummaryRow label="Status" value="Pending" /> */}
+        <SummaryRow
+          label="Payment Method"
+          value={paymentType ? paymentType.toUpperCase() : "—"}
+        />
       </div>
 
       <button
