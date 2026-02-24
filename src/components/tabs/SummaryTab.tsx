@@ -19,7 +19,7 @@ interface PointsData {
     name: string;
     minValue: number;
   } | null;
-  points_until_next_tier: number | null;
+  points_to_next_tier: number | null;
 }
 
 export default function SummaryTab() {
@@ -55,9 +55,7 @@ export default function SummaryTab() {
     setError(null);
 
     axiosInstance
-      .get("/user/merchant/points", {
-        params: { user_id: userId, merchant_id: merchantId },
-      })
+      .get(`/merchant/user/${userId}`)
       .then((res) => {
         setData(res.data.data);
       })
@@ -74,7 +72,6 @@ export default function SummaryTab() {
   useEffect(() => {
     fetchPoints();
   }, []);
-
   if (loading) {
     return (
       <div className="p-4 space-y-4 font-quantico animate-pulse">
@@ -137,7 +134,7 @@ export default function SummaryTab() {
         <div className="flex items-end justify-between mb-6">
           <div className="flex items-end gap-2">
             <p className="text-[#2979FF] text-7xl font-bold">
-              {data.balance.toLocaleString()}
+              {data.balance?.toLocaleString()}
             </p>
             <p className="text-[#2979FF] text-lg font-semibold text-center">
               Points
@@ -159,14 +156,14 @@ export default function SummaryTab() {
         {data.current_tier &&
           (() => {
             const pct =
-              data.points_until_next_tier === null
+              data.points_to_next_tier === null
                 ? 100
                 : Math.min(
                     100,
                     ((data.balance - data.current_tier.minValue) /
                       (data.balance -
                         data.current_tier.minValue +
-                        data.points_until_next_tier)) *
+                        data.points_to_next_tier)) *
                       100,
                   );
             return (
@@ -178,9 +175,9 @@ export default function SummaryTab() {
                   />
                 </div>
                 <p className="text-white text-lg mt-2 text-right">
-                  {data.points_until_next_tier === null
+                  {data.points_to_next_tier === null
                     ? "Max Tier"
-                    : `${data.points_until_next_tier.toLocaleString()} points to next tier`}
+                    : `${data.points_to_next_tier?.toLocaleString()} points to next tier`}
                 </p>
               </div>
             );

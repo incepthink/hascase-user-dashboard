@@ -4,6 +4,9 @@ export const backendUrl = process.env.NODE_ENV === 'production' ? 'https://api.h
 
 const axiosInstance = axios.create({
   baseURL: backendUrl, // Set your API base URL her
+  headers: {
+    "x-api-key": process.env.NEXT_PUBLIC_MERCHANT_API_KEY,
+  },
 });
 
 export default axiosInstance;
