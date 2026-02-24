@@ -55,7 +55,9 @@ export default function SummaryTab() {
     setError(null);
 
     axiosInstance
-      .get(`/merchant/user/${userId}`)
+      .get("/user/merchant/points", {
+        params: { user_id: userId, merchant_id: merchantId },
+      })
       .then((res) => {
         setData(res.data.data);
       })

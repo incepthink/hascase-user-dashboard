@@ -29,7 +29,9 @@ const MerchantDropdown = ({ value, onChange }: MerchantDropdownProps) => {
       .get("/platform/merchant")
       .then((res) => {
         const all: Merchant[] = res.data.data;
-        setMerchants(all.filter((m) => m.status === "active"));
+        const active = all.filter((m) => m.status === "active").reverse();
+        setMerchants(active);
+        if (active.length > 0) onChange(active[0].id);
       })
       .catch(() => {
         setMerchants([]);
