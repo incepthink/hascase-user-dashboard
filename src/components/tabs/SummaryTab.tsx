@@ -19,7 +19,7 @@ interface PointsData {
     name: string;
     minValue: number;
   } | null;
-  points_to_next_tier: number | null;
+  points_until_next_tier: number | null;
 }
 
 export default function SummaryTab() {
@@ -158,14 +158,14 @@ export default function SummaryTab() {
         {data.current_tier &&
           (() => {
             const pct =
-              data.points_to_next_tier === null
+              data.points_until_next_tier === null
                 ? 100
                 : Math.min(
                     100,
                     ((data.balance - data.current_tier.minValue) /
                       (data.balance -
                         data.current_tier.minValue +
-                        data.points_to_next_tier)) *
+                        data.points_until_next_tier)) *
                       100,
                   );
             return (
@@ -177,9 +177,9 @@ export default function SummaryTab() {
                   />
                 </div>
                 <p className="text-white text-lg mt-2 text-right">
-                  {data.points_to_next_tier === null
+                  {data.points_until_next_tier === null
                     ? "Max Tier"
-                    : `${data.points_to_next_tier?.toLocaleString()} points to next tier`}
+                    : `${data.points_until_next_tier?.toLocaleString()} points to next tier`}
                 </p>
               </div>
             );
