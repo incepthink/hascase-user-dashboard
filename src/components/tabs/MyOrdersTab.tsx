@@ -3,34 +3,17 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import axiosInstance from "@/utils/axios";
+import client from "@/utils/sdk";
+import type { OrderWithDetails } from "@hashcase/merchant-sdk";
 import { getRewardLabel } from "@/utils/rewardLabel";
-
-interface Order {
-  id: number;
-  status: string;
-  createdAt: string;
-  loyalty: {
-    code: string;
-    value: number;
-    type: string;
-  } | null;
-  reward: {
-    point_cost: number;
-    type: string;
-    discountType: string;
-    discountValue: string;
-    productName: string;
-  } | null;
-}
 
 export default function MyOrdersTab() {
   const router = useRouter();
-  const [orders, setOrders] = useState<Order[]>([]);
+  const [orders, setOrders] = useState<OrderWithDetails[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"generic" | null>(null);
 
-  const fetchOrders = () => {
+  const fetchOrders = async () => {
     const raw = Cookies.get("merchant_user");
     if (!raw) {
       router.push("/login");
@@ -46,8 +29,7 @@ export default function MyOrdersTab() {
     }
 
     const userId = user?.id;
-    const merchantId = user?.merchant_id;
-    if (!userId || !merchantId) {
+    if (!userId) {
       router.push("/login");
       return;
     }
@@ -55,11 +37,14 @@ export default function MyOrdersTab() {
     setLoading(true);
     setError(null);
 
-    axiosInstance
-      .get(`/user/merchant/orders/${merchantId}/${userId}`)
-      .then((res) => setOrders(res.data.data ?? res.data))
-      .catch(() => setError("generic"))
-      .finally(() => setLoading(false));
+    try {
+      const data = await client.users.getOrders(userId);
+      setOrders(data);
+    } catch {
+      setError("generic");
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -133,32 +118,32 @@ export default function MyOrdersTab() {
           >
             <p className="text-white text-sm font-medium">#{order.id}</p>
             <div className="flex flex-col gap-2">
-              {order.reward && (
+              {order.selected_reward && (
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">Reward</p>
                   <span className="text-white text-sm">
                     {getRewardLabel({
-                      type: order.reward.type,
-                      discountType: order.reward.discountType,
-                      discountValue: order.reward.discountValue,
-                      productName: order.reward.productName,
+                      type: order.selected_reward.type,
+                      discountType: order.selected_reward.discountType,
+                      discountValue: order.selected_reward.discountValue?.toString(),
+                      productName: order.selected_reward.productName,
                     })}
                   </span>
                 </div>
               )}
-              {order.loyalty && (
+              {order.selected_loyalty && (
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">Points Gain</p>
                   <span className="text-green-400 text-sm">
-                    +{order.loyalty.value}
+                    +{order.selected_loyalty.value}
                   </span>
                 </div>
               )}
-              {order.reward && (
+              {order.selected_reward && (
                 <div className="flex justify-between items-center">
                   <p className="text-gray-400 text-sm">Points Spent</p>
                   <span className="text-red-400 text-sm">
-                    {order.reward.point_cost}
+                    {order.selected_reward.point_cost}
                   </span>
                 </div>
               )}

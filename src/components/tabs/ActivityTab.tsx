@@ -4,28 +4,22 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import { Gift, RefreshCw } from "lucide-react";
-import axiosInstance from "@/utils/axios";
+import client from "@/utils/sdk";
+import type { Reward } from "@hashcase/merchant-sdk";
 import { getRewardLabel } from "@/utils/rewardLabel";
 
-interface GrantedReward {
-  id: number;
-  merchant_id: number;
-  point_cost: number;
-  type: string;
-  discountType: string | null;
-  discountValue: string | null;
-  productName: string | null;
-  requiredTierId: number | null;
-  createdAt: string;
+interface RewardsState {
+  claimed: Reward[];
+  pending: Reward[];
 }
 
 export default function ActivityTab() {
   const router = useRouter();
-  const [rewards, setRewards] = useState<GrantedReward[]>([]);
+  const [rewards, setRewards] = useState<RewardsState>({ claimed: [], pending: [] });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
 
-  const fetchGrantedRewards = () => {
+  const fetchGrantedRewards = async () => {
     const raw = Cookies.get("merchant_user");
     if (!raw) {
       router.push("/login");
@@ -41,9 +35,8 @@ export default function ActivityTab() {
     }
 
     const userId = user?.id;
-    const merchantId = user?.merchant_id;
 
-    if (!userId || !merchantId) {
+    if (!userId) {
       router.push("/login");
       return;
     }
@@ -51,15 +44,14 @@ export default function ActivityTab() {
     setLoading(true);
     setError(false);
 
-    axiosInstance
-      .get("/user/merchant/granted-rewards", {
-        params: { user_id: userId, merchant_id: merchantId },
-      })
-      .then((res) => {
-        setRewards(res.data.data ?? []);
-      })
-      .catch(() => setError(true))
-      .finally(() => setLoading(false));
+    try {
+      const data = await client.users.getRewards(userId);
+      setRewards({ claimed: data.claimed_rewards, pending: data.pending_rewards });
+    } catch {
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -95,7 +87,7 @@ export default function ActivityTab() {
     );
   }
 
-  if (rewards.length === 0) {
+  if (rewards.claimed.length === 0 && rewards.pending.length === 0) {
     return (
       <div className="p-4 flex flex-col items-center justify-center gap-2 text-center font-quantico min-h-50">
         <Gift size={32} className="text-gray-600" />
@@ -104,27 +96,37 @@ export default function ActivityTab() {
     );
   }
 
+  const renderReward = (reward: Reward) => (
+    <div
+      key={reward.id}
+      className="flex items-center gap-3 bg-[#0A0E2A] border border-[#1e2a4a] rounded-lg px-4 py-3"
+    >
+      <Gift size={16} className="text-[#2979FF] shrink-0" />
+      <span className="text-sm text-gray-200">
+        {getRewardLabel({
+          type: reward.type,
+          discountType: reward.discountType,
+          discountValue: reward.discountValue?.toString(),
+          productName: reward.productName,
+        })}
+      </span>
+    </div>
+  );
+
   return (
-    <div className="p-4 space-y-3 font-quantico">
-      <h2 className="text-xl font-semibold">Rewards Claimed</h2>
-      <div className="space-y-2">
-        {rewards.map((reward) => (
-          <div
-            key={reward.id}
-            className="flex items-center gap-3 bg-[#0A0E2A] border border-[#1e2a4a] rounded-lg px-4 py-3"
-          >
-            <Gift size={16} className="text-[#2979FF] shrink-0" />
-            <span className="text-sm text-gray-200">
-              {getRewardLabel({
-                type: reward.type,
-                discountType: reward.discountType,
-                discountValue: reward.discountValue,
-                productName: reward.productName,
-              })}
-            </span>
-          </div>
-        ))}
-      </div>
+    <div className="p-4 space-y-5 font-quantico">
+      {rewards.claimed.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Rewards Claimed</h2>
+          <div className="space-y-2">{rewards.claimed.map(renderReward)}</div>
+        </div>
+      )}
+      {rewards.pending.length > 0 && (
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold">Pending Rewards</h2>
+          <div className="space-y-2">{rewards.pending.map(renderReward)}</div>
+        </div>
+      )}
     </div>
   );
 }

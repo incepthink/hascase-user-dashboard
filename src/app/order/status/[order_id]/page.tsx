@@ -75,7 +75,6 @@ interface Order {
   selected_reward_id: number | null;
   bill_amount: string;
   payment_method_id: number | null;
-  status: string;
   createdAt: string;
   updatedAt: string;
   loyalty: Loyalty | null;
@@ -85,41 +84,6 @@ interface Order {
     name: string;
   };
   payment_method: PaymentMethod | null;
-}
-
-function StatusBadge({ status }: { status: string }) {
-  const s = status?.toLowerCase();
-
-  if (s === "completed" || s === "success") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-500/15 text-green-400 text-sm font-medium capitalize">
-        <CheckCircle2 size={14} />
-        {status}
-      </span>
-    );
-  }
-  if (s === "pending") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-yellow-500/15 text-yellow-400 text-sm font-medium capitalize">
-        <Clock size={14} />
-        {status}
-      </span>
-    );
-  }
-  if (s === "failed" || s === "cancelled" || s === "canceled") {
-    return (
-      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-red-500/15 text-red-400 text-sm font-medium capitalize">
-        <XCircle size={14} />
-        {status}
-      </span>
-    );
-  }
-  return (
-    <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-blue-500/15 text-[#2979FF] text-sm font-medium capitalize">
-      <AlertCircle size={14} />
-      {status}
-    </span>
-  );
 }
 
 function DetailRow({
@@ -147,11 +111,8 @@ export default function OrderStatusPage() {
   const router = useRouter();
 
   const [order, setOrder] = useState<Order | null>(null);
-  const [status, setStatus] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   // Fetch full order once
   useEffect(() => {
@@ -162,7 +123,6 @@ export default function OrderStatusPage() {
       .then((res) => {
         const data: Order = res.data?.data ?? res.data;
         setOrder(data);
-        setStatus(data.status);
       })
       .catch(() => {
         setError("Failed to load order details.");
@@ -171,34 +131,6 @@ export default function OrderStatusPage() {
         setLoading(false);
       });
   }, [order_id]);
-
-  // Poll status every second, only while status is pending
-  useEffect(() => {
-    if (!order_id) return;
-
-    pollRef.current = setInterval(() => {
-      axiosInstance
-        .get(`/user/merchant/order/${order_id}/poll`)
-        .then((res) => {
-          const pollData = res.data?.data ?? res.data;
-          const newStatus: string = pollData?.status ?? pollData;
-          setStatus(newStatus);
-
-          if (newStatus?.toLowerCase() !== "pending") {
-            if (pollRef.current) clearInterval(pollRef.current);
-          }
-        })
-        .catch(() => {
-          // Silently ignore poll errors
-        });
-    }, 1000);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
-  }, [order_id]);
-
-  const displayStatus = status ?? order?.status ?? "";
 
   return (
     <div className="min-h-screen pt-24 px-4 pb-10">
@@ -245,12 +177,6 @@ export default function OrderStatusPage() {
                     #{order.id}
                   </h2>
                 </div>
-
-                {displayStatus ? (
-                  <StatusBadge status={displayStatus} />
-                ) : (
-                  <Loader2 size={16} className="animate-spin text-[#2979FF]" />
-                )}
               </div>
               <DetailRow
                 icon={<User size={14} />}

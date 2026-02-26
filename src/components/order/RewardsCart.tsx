@@ -32,7 +32,11 @@ interface RewardsCartProps {
   merchantId: number | null;
   userId: number | null;
   selectedRewardId: number | null;
-  onSelect: (id: number | null, label: string | null, discount: RewardDiscount | null) => void;
+  onSelect: (
+    id: number | null,
+    label: string | null,
+    discount: RewardDiscount | null,
+  ) => void;
 }
 
 export default function RewardsCart({
@@ -50,7 +54,7 @@ export default function RewardsCart({
     setLoading(true);
     setError(false);
     axiosInstance
-      .get(`/user/merchant/rewards`, {
+      .get(`/merchant/reward`, {
         params: { merchant_id: merchantId, user_id: userId },
       })
       .then((res) => {
@@ -70,7 +74,13 @@ export default function RewardsCart({
     onSelect(
       next,
       next !== null ? getRewardLabel(reward) : null,
-      next !== null ? { type: reward.type, discountType: reward.discountType, discountValue: reward.discountValue } : null
+      next !== null
+        ? {
+            type: reward.type,
+            discountType: reward.discountType,
+            discountValue: reward.discountValue,
+          }
+        : null,
     );
   };
 

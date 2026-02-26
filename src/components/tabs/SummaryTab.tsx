@@ -3,32 +3,16 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
-import axiosInstance from "@/utils/axios";
-
-interface PointsData {
-  id: number;
-  merchant_id: number;
-  user_id: number;
-  balance: number;
-  enrolled_at: string;
-  total_points_earned: number;
-  total_points_spent: number;
-  current_tier: {
-    id: number;
-    level: number;
-    name: string;
-    minValue: number;
-  } | null;
-  points_until_next_tier: number | null;
-}
+import client from "@/utils/sdk";
+import type { UserDetail } from "@hashcase/merchant-sdk";
 
 export default function SummaryTab() {
   const router = useRouter();
-  const [data, setData] = useState<PointsData | null>(null);
+  const [data, setData] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"not_enrolled" | "generic" | null>(null);
 
-  const fetchPoints = () => {
+  const fetchPoints = async () => {
     const raw = Cookies.get("merchant_user");
     if (!raw) {
       router.push("/login");
@@ -44,7 +28,6 @@ export default function SummaryTab() {
     }
 
     const userId = user?.id;
-    const merchantId = user?.merchant_id;
 
     if (!userId) {
       router.push("/login");
@@ -54,21 +37,22 @@ export default function SummaryTab() {
     setLoading(true);
     setError(null);
 
-    axiosInstance
-      .get("/user/merchant/points", {
-        params: { user_id: userId, merchant_id: merchantId },
-      })
-      .then((res) => {
-        setData(res.data.data);
-      })
-      .catch((err) => {
-        if (err?.response?.status === 404) {
-          setError("not_enrolled");
-        } else {
-          setError("generic");
-        }
-      })
-      .finally(() => setLoading(false));
+    try {
+      const data = await client.users.get(userId);
+
+      setData(data);
+    } catch (err: unknown) {
+      const status =
+        (err as { response?: { status?: number }; status?: number })?.response
+          ?.status ?? (err as { status?: number })?.status;
+      if (status === 404) {
+        setError("not_enrolled");
+      } else {
+        setError("generic");
+      }
+    } finally {
+      setLoading(false);
+    }
   };
 
   useEffect(() => {
@@ -158,14 +142,14 @@ export default function SummaryTab() {
         {data.current_tier &&
           (() => {
             const pct =
-              data.points_until_next_tier === null
+              data.points_to_next_tier === null
                 ? 100
                 : Math.min(
                     100,
                     ((data.balance - data.current_tier.minValue) /
                       (data.balance -
                         data.current_tier.minValue +
-                        data.points_until_next_tier)) *
+                        data.points_to_next_tier)) *
                       100,
                   );
             return (
@@ -177,9 +161,9 @@ export default function SummaryTab() {
                   />
                 </div>
                 <p className="text-white text-lg mt-2 text-right">
-                  {data.points_until_next_tier === null
+                  {data.points_to_next_tier === null
                     ? "Max Tier"
-                    : `${data.points_until_next_tier?.toLocaleString()} points to next tier`}
+                    : `${data.points_to_next_tier?.toLocaleString()} points to next tier`}
                 </p>
               </div>
             );
