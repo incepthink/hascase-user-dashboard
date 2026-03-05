@@ -18,7 +18,7 @@ interface Reward {
   discountType: string | null;
   discountValue: string | null;
   productName: string | null;
-  requiredTier: RequiredTier | null;
+  required_tier: RequiredTier | null;
   can_claim: boolean;
 }
 
@@ -85,8 +85,8 @@ export default function RewardsCart({
   };
 
   const costLabel = (reward: Reward): string => {
-    if (reward.requiredTier !== null) {
-      return `0 (${reward.requiredTier.name} Tier Reward)`;
+    if (reward.required_tier !== null) {
+      return `0 (${reward.required_tier.name} Tier Reward)`;
     }
     return `${reward.point_cost} Points`;
   };

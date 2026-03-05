@@ -79,7 +79,7 @@ interface Order {
   updatedAt: string;
   loyalty: Loyalty | null;
   reward: Reward | null;
-  user: OrderUser;
+  user: OrderUser | null;
   merchant: {
     name: string;
   };
@@ -181,7 +181,7 @@ export default function OrderStatusPage() {
               <DetailRow
                 icon={<User size={14} />}
                 label="Email"
-                value={order.user.email}
+                value={order.user?.email ?? "—"}
               />
               <DetailRow
                 icon={<Store size={14} />}

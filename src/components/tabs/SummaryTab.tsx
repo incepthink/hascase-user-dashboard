@@ -5,12 +5,14 @@ import { useRouter } from "next/navigation";
 import Cookies from "js-cookie";
 import client from "@/utils/sdk";
 import type { UserDetail } from "@hashcase/merchant-sdk";
+import axiosInstance from "@/utils/axios";
 
 export default function SummaryTab() {
   const router = useRouter();
   const [data, setData] = useState<UserDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<"not_enrolled" | "generic" | null>(null);
+  const [currentStreak, setCurrentStreak] = useState(0);
 
   const fetchPoints = async () => {
     const raw = Cookies.get("merchant_user");
@@ -39,8 +41,15 @@ export default function SummaryTab() {
 
     try {
       const data = await client.users.get(userId);
-
       setData(data);
+
+      const streakResponse = await axiosInstance.get(
+        "/merchant/extend-streak",
+        {
+          params: { user_id: userId },
+        },
+      );
+      setCurrentStreak(streakResponse.data.user_achievements.current_streak);
     } catch (err: unknown) {
       const status =
         (err as { response?: { status?: number }; status?: number })?.response
@@ -117,6 +126,9 @@ export default function SummaryTab() {
     <div className="p-4 space-y-6 font-quantico">
       {/* Balance — hero card */}
       <div>
+        <p className="text-[#2979FF] text-xl font-bold text-center mb-4">
+          STREAK: {currentStreak} DAY
+        </p>
         <div className="flex items-end justify-between mb-6">
           <div className="flex items-end gap-2">
             <p className="text-[#2979FF] text-7xl font-bold">
